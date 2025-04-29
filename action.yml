@@ -92,5 +92,5 @@ runs:
         # commit the changes
         git add $env:SECURITY_POLICY_FILEPATH
         git commit -m "doc: Update security policy"
-        # git push
+        git push
 
