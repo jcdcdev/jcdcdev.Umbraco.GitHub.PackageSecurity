@@ -79,7 +79,7 @@ runs:
         # write the new content to the SECURITY.md file
         $newContent | Set-Content -Path $env:SECURITY_POLICY_FILEPATH -Force
         Write-Host "Updated the security policy file"
-        
+        Write-Host "New content: $newContent"
         if ($env:DRY_RUN -eq "true") {  
           Write-Host "This is a dry run. No changes will be made."
           return
