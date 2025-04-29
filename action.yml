@@ -19,9 +19,16 @@ inputs:
   security-policy-api-key:
     description: "The API key to use for the security policy"
     required: true
+  branch:
+    description: "The branch to push the changes to"
+    required: true
 runs:
   using: "composite"
   steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
     - name: Update security policy
       id: update-security-policy
       shell: pwsh
