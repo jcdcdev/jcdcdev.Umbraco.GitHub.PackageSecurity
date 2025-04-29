@@ -1,0 +1,89 @@
+name: "🔐 Update JCDC.DEV Umbraco package security policy"
+description: ""
+author: "James Carter"
+branding:
+  icon: "refresh-cw"
+  color: "gray-dark"
+inputs:
+  dry-run:
+    description: "Dry run: Run the workflow without making any changes"
+    required: false
+    default: "false"
+  project-name:
+    description: "The name of the project to update the security policy for"
+    required: true
+  security-policy-filepath:
+    description: "The path to the security policy file"
+    required: false
+    default: "./SECURITY.md"
+  security-policy-api-key:
+    description: "The API key to use for the security policy"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Update security policy
+      id: update-security-policy
+      shell: pwsh
+      env:
+        SECURITY_POLICY_FILEPATH: ${{ inputs.security-policy-filepath }}
+        PROJECT_NAME: ${{ inputs.project-name }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        SECURITY_POLICY_API_KEY: ${{ inputs.security-policy-api-key }}
+      run: |
+        # get the current SECURITY.md file if it exists
+        if (Test-Path $env:SECURITY_POLICY_FILEPATH) {
+          $currentFile = Get-Content -Path $env:SECURITY_POLICY_FILEPATH -Raw
+        } else {
+          $currentFile = ""
+        }
+
+        $newContent = ""
+
+        $baseUrl="https://cms.jcdc.dev/api/marketplace/packages/security/$($env:PROJECT_NAME)"
+        try{
+          # include api key header
+          $response = Invoke-RestMethod -Uri $baseUrl -Method Get -Headers @{
+            "Api-Key" = "$($env:SECURITY_POLICY_API_KEY)"
+          } -ErrorAction Stop
+          if ($response -eq $null) {
+            Write-Host "No security policy found for $baseUrl"
+            exit 1
+          }
+
+          $newContent = $response
+        }
+        catch {
+          Write-Host "Failed to get security policy from $baseUrl"
+          if($_.ErrorDetails.Message) {
+            Write-Host $_.ErrorDetails.Message
+          } else {
+              Write-Host $_
+          }
+          exit 1
+        }
+
+        # check if the new content is different from the current content
+        if ($currentFile -eq $newContent) {
+          Write-Host "No changes to the security policy"
+          exit 0
+        }
+
+        # write the new content to the SECURITY.md file
+        $newContent | Set-Content -Path $env:SECURITY_POLICY_FILEPATH -Force
+        Write-Host "Updated the security policy file"
+        
+        if ($env:DRY_RUN -eq "true") {  
+          Write-Host "This is a dry run. No changes will be made."
+          return
+        } 
+
+        git config user.name "${{ github.actor }}"
+        git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+        write-host "Committing changes to $env:SECURITY_POLICY_FILEPATH"
+        
+        # commit the changes
+        git add $env:SECURITY_POLICY_FILEPATH
+        git commit -m "doc: Update security policy"
+        # git push
+
