@@ -47,7 +47,7 @@ runs:
 
         $newContent = ""
 
-        $baseUrl="https://cms.jcdc.dev/api/marketplace/packages/security/$($env:PROJECT_NAME)"
+        $baseUrl="https://content.jcdc.dev/api/marketplace/packages/security/$($env:PROJECT_NAME)"
         try{
           # include api key header
           $response = Invoke-RestMethod -Uri $baseUrl -Method Get -Headers @{
